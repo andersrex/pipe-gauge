@@ -12,7 +12,7 @@
 
 ```bash
 cat https://github.com/andersrex/pipe-gauge/raw/master/gauge.py > gauge
-gauge && chmod 744 gauge
+chmod 744 gauge
 ```
 
 ## Usage
