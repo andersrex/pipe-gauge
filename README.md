@@ -34,9 +34,9 @@ $ gem install lolcat
 $ cat service.log | gauge | lolcat
 ```
 
-### How does `gauge` find the timestamp in a file with historical data?
+### How does `gauge` find the timestamps in a file with historical data?
 
-`gauge` assumes your log starts with a timestamp that is formatted by increasing specificity (year -> month -> day -> hour etc). This way we can simply group the log into historgram bars alphabetically.
+`gauge` assumes your log entries start with a timestamp that is formatted by increasing specificity (year -> month -> day -> hour etc). This way we can simply group the log into historgram bars alphabetically.
 
 If your log has a different format, you can use a tool like `awk` to reformat it:
 
