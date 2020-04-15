@@ -1,4 +1,4 @@
-![pipe-gauge](gauge.py)
+![pipe-gauge](https://github.com/andersrex/pipe-gauge/raw/master/gauge.png)
 
 # pipe-gauge
 
@@ -6,7 +6,7 @@ Quickly turn logs into time-series histograms in your terminal.
 
 ## Installation 
 
-TODO
+`$ cat https://github.com/andersrex/pipe-gauge/raw/master/gauge.py > gauge && chmod 744 gauge`
 
 ## Usage
 
