@@ -8,7 +8,7 @@
 
 > Quickly turn logs into time-series histograms in your terminal.
 
-<img src="https://github.com/andersrex/pipe-gauge/raw/master/screenshot.png" />
+<img src="https://github.com/andersrex/pipe-gauge/raw/master/screenshot.png" style="max-width: 570px" />
 
 
 ## Installation 
