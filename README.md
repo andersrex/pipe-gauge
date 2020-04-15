@@ -1,4 +1,8 @@
-![pipe-gauge](https://github.com/andersrex/pipe-gauge/raw/master/gauge.png)
+<p align="center">
+  <a href="https://github.com/andersrex/pipe-gauge">
+    <img src="https://github.com/andersrex/pipe-gauge/raw/master/gauge.png" width="260"/>
+  </a>
+</p>
 
 # pipe-gauge
 
