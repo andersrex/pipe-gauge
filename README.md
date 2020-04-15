@@ -6,26 +6,33 @@
 
 # pipe-gauge
 
-Quickly turn logs into time-series histograms in your terminal.
+> Quickly turn logs into time-series histograms in your terminal.
 
 ## Installation 
 
-`$ cat https://github.com/andersrex/pipe-gauge/raw/master/gauge.py > gauge`
-
-`$ gauge && chmod 744 gauge`
+```bash
+cat https://github.com/andersrex/pipe-gauge/raw/master/gauge.py > gauge
+gauge && chmod 744 gauge
+```
 
 ## Usage
 
-Graph a file with historical data:
-`$ cat service.log | gauge`
+Graph a file with historical data
+```bash
+cat service.log | gauge
+```
 
-Graph a real-time stream:
-`$ tail -f service.log | gauge -f`
+Graph a real-time stream
+```bash
+tail -f service.log | gauge -f
+```
 
-With rainbows:
+With rainbows
 
-`$ gem install lolcat`
-`$ cat service.log | gauge | lolcat`
+```bash
+$ gem install lolcat
+$ cat service.log | gauge | lolcat
+```
 
 ### How does `gauge` find the timestamp in a file with historical data?
 
@@ -33,7 +40,9 @@ With rainbows:
 
 If your log has a different format, you can use a tool like `awk` to reformat it:
 
-`$ cat service.log | awk '{print $2,$1}' | gauge`
+```bash
+cat service.log | awk '{print $2,$1}' | gauge
+```
 
 18:43:49 2020-04-14 ... -> 2020-04-14 18:43:49 ...
 
