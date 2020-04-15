@@ -10,16 +10,16 @@ Quickly turn logs into time-series histograms in your terminal.
 
 ## Installation 
 
-`$ cat https://github.com/andersrex/pipe-gauge/raw/master/gauge.py > gauge && chmod 744 gauge`
+`$ cat https://github.com/andersrex/pipe-gauge/raw/master/gauge.py > gauge`
+
+`$ gauge && chmod 744 gauge`
 
 ## Usage
 
 Graph a file with historical data:
-
 `$ cat service.log | gauge`
 
 Graph a real-time stream:
-
 `$ tail -f service.log | gauge -f`
 
 With rainbows:
