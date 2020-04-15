@@ -1,3 +1,5 @@
+![pipe-gauge](gauge.py)
+
 # pipe-gauge
 
 Quickly turn logs into time-series histograms in your terminal.
@@ -21,7 +23,7 @@ With rainbows:
 `$ gem install lolcat`
 `$ cat service.log | gauge | lolcat`
 
-## How does `gauge` find the timestamp in a file with historical data?
+### How does `gauge` find the timestamp in a file with historical data?
 
 `gauge` assumes your log starts with a timestamp that is formatted by increasing specificity (year -> month -> day -> hour etc). This way we can simply group the log into historgram bars alphabetically.
 
