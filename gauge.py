@@ -7,6 +7,8 @@ import fileinput
 import time
 import locale
 import argparse
+import threading
+import sys
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -20,7 +22,6 @@ interval = args.i
 
 class Gauge():
     def __init__(self):
-        self.screen = Screen()
 
         f = fileinput.input(args.files)
         if args.f:
@@ -28,55 +29,70 @@ class Gauge():
         else:
             self.read_file(f)
 
+    def start_screen_loop(self, state):
+        print("start_screen_loop")
+        def screen_loop(state):
+            print("screen_loop")
+            while True:
+                if self.screen.is_term_resized():
+                    self.screen.resize()
+
+                self.screen.render(state)
+                time.sleep(0.1)
+
+        screen_thread = threading.Thread(target=screen_loop, args=(state,))
+        screen_thread.daemon = True
+        screen_thread.start()
+
     def read_stream(self, f):
+        line_count = 0
+        checkpoint_time = time.time()
+        state = State([])
+
         try:
-            line_count = 0
-            checkpoint_time = time.time()
-            state = State([])
+            self.screen = Screen()
+            self.start_screen_loop(state)
+
             for _ in f:
                 line_count = line_count + 1
                 current_time = time.time()
                 if (current_time > checkpoint_time + interval):
                     state.add_entry(line_count)
-
-                    if self.screen.is_term_resized():
-                        self.screen.resize()
-
-                    self.screen.render(state)
-
                     line_count = 0
                     checkpoint_time = current_time
 
         except KeyboardInterrupt:
             self.screen.close()
             f.close()
+            sys.exit() 
 
     def read_file(self, f):
         lines = []
         for line in f:
             lines.append(line)
-
+        self.screen = Screen()
         state = self.get_state_from_lines(lines)
-    
+        self.start_screen_loop(state)
+
         f.close()
 
+        
         try:
             while True:
-                if self.screen.is_term_resized():
-                    self.screen.resize()
-                    state = self.get_state_from_lines(lines)
-                self.screen.render(state)
                 time.sleep(1)
         except KeyboardInterrupt:
             self.screen.close()
+            sys.exit() 
+
 
     def get_state_from_lines(self, lines):
         groups = {}
         characters = 0
-        while len(groups) < self.screen.cols:
+        print(lines)
+        while len(groups) <= self.screen.cols and characters < self.screen.cols:
             characters = characters + 1
             groups = self.split_into_groups(lines, characters)
-            
+
         sorted_keys = sorted(groups.keys())
         first_key = sorted_keys[0]
         last_key = sorted_keys[-1]
@@ -85,18 +101,17 @@ class Gauge():
         for key in sorted_keys:
             entries.append(groups[key])
 
-        print("entries: {}".format(entries))
         return State(entries, first_key, last_key)
 
     def split_into_groups(self, lines, characters):
         groups  = {}
         for line in lines:
-            if (line[0].isdigit()):
-                group = line[0:characters]
-                if group in groups:
-                    groups[group] = groups[group] + 1
-                else: 
-                    groups[group] = 1
+            # if (line[0].isdigit()):
+            group = line[0:characters]
+            if group in groups:
+                groups[group] = groups[group] + 1
+            else:
+                groups[group] = 1
         return groups
 
 class State():
@@ -151,7 +166,7 @@ class Screen():
 
     def _render_screen(self, state): 
         y_max = int(state.max_entry*1.2)
-        y_latest = state.entries[-1]
+        y_latest = state.entries[-1] if len(state.entries) else 0
         if state.x_min and state.x_max:
             status = "x=[{}...,{}...] y=[0,{}] y_max={}".format(state.x_min, state.x_max, y_max, state.max_entry)
         else:
