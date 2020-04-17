@@ -8,6 +8,9 @@
 
 > Quickly turn logs into time-series histograms in your terminal.
 
+<img src="https://github.com/andersrex/pipe-gauge/raw/master/screenshot.png" width="520" />
+
+
 ## Installation 
 
 ```bash
