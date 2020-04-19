@@ -121,14 +121,12 @@ class Gauge():
             try:
                 text = line[0:50].replace("-", ",")
                 numbers = sum(c.isdigit() for c in text)
-                print("{}: {}".format(date, text))
 
                 if numbers > 5:
                     date = parse(text, fuzzy=True)
                     timestamp = time.mktime(date.timetuple())
 
                     if self.is_valid_timestamp(timestamp):
-                        print("{}: {}".format(date, text))
                         if timestamp in groups:
                             groups[timestamp] = groups[timestamp] + 1
                         else:

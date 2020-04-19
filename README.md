@@ -30,6 +30,11 @@ Graph a real-time stream
 tail -f service.log | gauge -f
 ```
 
+Graph a real-time stream with a custom time interval (10 sec)
+```bash
+tail -f service.log | gauge -f -i 10s
+```
+
 With rainbows
 
 ```bash
@@ -39,16 +44,13 @@ $ cat service.log | gauge | lolcat
 
 ### How does `gauge` find the timestamps in a file with historical data?
 
-`gauge` assumes your log entries start with a timestamp that is formatted by increasing specificity (year -> month -> day -> hour etc). This way we can simply group the log into historgram bars alphabetically.
-
-If your log has a different format, you can use a tool like `awk` to reformat it:
+`gauge` uses `dateutil.parser` to try to find a timestamp on each row of input data. If your input data contains multiple timestamps per row or numerical data that confuses `dateutil.parser`, you can try using a tool like awk to narrow down you selection.
 
 ```bash
-cat service.log | awk '{print $2,$1}' | gauge
+cat service.log | awk '{print $1,$2}' | gauge
 ```
 
-18:43:49 2020-04-14 ... -> 2020-04-14 18:43:49 ...
-
+`2020-04-19 16:21:41 localhost: BackgroundAction scheduled: 2020-04-19 17:00:00` ⇨ `2020-04-19 16:21:41`
 
 
 
