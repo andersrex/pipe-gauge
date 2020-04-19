@@ -48,14 +48,12 @@ $ cat service.log | gauge | lolcat
 
 
 
+`2020-04-19 16:21:41 localhost: BackgroundAction scheduled: 2020-04-19 17:00:00`
+⇩
 ```bash
 cat service.log | awk '{print $1,$2}' | gauge
 ```
-
-`2020-04-19 16:21:41 localhost: BackgroundAction scheduled: 2020-04-19 17:00:00`
-
 ⇩
-
 `2020-04-19 16:21:41`
 
 
