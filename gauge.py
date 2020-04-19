@@ -9,6 +9,9 @@ import locale
 import argparse
 import threading
 import sys
+from datetime import datetime
+from dateutil.parser import parse
+# from dateparser.search import search_dates
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -30,12 +33,11 @@ class Gauge():
             self.read_file(f)
 
     def start_screen_loop(self, state):
-        print("start_screen_loop")
         def screen_loop(state):
-            print("screen_loop")
             while True:
                 if self.screen.is_term_resized():
-                    self.screen.resize()
+                    self.screen.close()
+                    break
 
                 self.screen.render(state)
                 time.sleep(0.1)
@@ -44,6 +46,8 @@ class Gauge():
         screen_thread.daemon = True
         screen_thread.start()
 
+        return screen_thread
+
     def read_stream(self, f):
         line_count = 0
         checkpoint_time = time.time()
@@ -51,7 +55,7 @@ class Gauge():
 
         try:
             self.screen = Screen()
-            self.start_screen_loop(state)
+            screen_thread = self.start_screen_loop(state)
 
             for _ in f:
                 line_count = line_count + 1
@@ -60,6 +64,10 @@ class Gauge():
                     state.add_entry(line_count)
                     line_count = 0
                     checkpoint_time = current_time
+
+                if not screen_thread.is_alive():
+                    f.close()
+                    sys.exit() 
 
         except KeyboardInterrupt:
             self.screen.close()
@@ -70,12 +78,12 @@ class Gauge():
         lines = []
         for line in f:
             lines.append(line)
-        self.screen = Screen()
-        state = self.get_state_from_lines(lines)
-        self.start_screen_loop(state)
-
         f.close()
 
+        self.screen = Screen()
+        state = self.get_state_from_lines(lines)
+
+        self.start_screen_loop(state)
         
         try:
             while True:
@@ -84,35 +92,58 @@ class Gauge():
             self.screen.close()
             sys.exit() 
 
-
     def get_state_from_lines(self, lines):
         groups = {}
         characters = 0
-        print(lines)
-        while len(groups) <= self.screen.cols and characters < self.screen.cols:
-            characters = characters + 1
-            groups = self.split_into_groups(lines, characters)
+        groups = self.split_into_groups_parse(lines)
 
         sorted_keys = sorted(groups.keys())
-        first_key = sorted_keys[0]
-        last_key = sorted_keys[-1]
-        entries = []
+        
+        # Bail if we don't find any entries
+        if (len(sorted_keys) == 0):
+            print("No timestamps found. Make sure the rows in your input data contains timestamps.")
+            sys.exit()
 
+        first_key = sorted_keys[0] if sorted_keys[0:] else 0
+        last_key = sorted_keys[-1] if sorted_keys[0:] else 1
+        entries = [0] * self.screen.cols
+        diff = last_key - first_key
+  
         for key in sorted_keys:
-            entries.append(groups[key])
+            normalized_key = int((key - first_key)*((self.screen.cols-1)/diff))
+            entries[normalized_key] = entries[normalized_key] + 1
 
         return State(entries, first_key, last_key)
 
-    def split_into_groups(self, lines, characters):
+    def split_into_groups_parse(self, lines):
         groups  = {}
         for line in lines:
-            # if (line[0].isdigit()):
-            group = line[0:characters]
-            if group in groups:
-                groups[group] = groups[group] + 1
-            else:
-                groups[group] = 1
+            try:
+                text = line[0:50].replace("-", ",")
+                numbers = sum(c.isdigit() for c in text)
+                print("{}: {}".format(date, text))
+
+                if numbers > 5:
+                    date = parse(text, fuzzy=True)
+                    timestamp = time.mktime(date.timetuple())
+
+                    if self.is_valid_timestamp(timestamp):
+                        print("{}: {}".format(date, text))
+                        if timestamp in groups:
+                            groups[timestamp] = groups[timestamp] + 1
+                        else:
+                            groups[timestamp] = 1
+            except ValueError:
+                1
+            except OverflowError: 
+                1
         return groups
+
+    def is_valid_timestamp(self, timestamp):
+        # TODO: Improve timestamp detection
+        now = time.time()
+        five_years = 60*60*24*365*5
+        return timestamp > now - five_years and timestamp < now
 
 class State():
     """Class for keeping application state"""
@@ -123,7 +154,7 @@ class State():
         self.y_latest = 0
         self.x_min = first_key
         self.x_max = last_key
-        self.max_entry = max(entries) if len(entries) else 0
+        self.max_entry = max(entries or [1])
 
     def add_entry(self, entry):
         self.entries.append(entry)
@@ -148,7 +179,7 @@ class Screen():
         curses.resizeterm(self.y, self.x)
         self.cscreen.refresh()
         self.lines = curses.LINES
-        self.cols = curses.COLS
+        self.cols = curses.COLS - 1 
         self.screen = [['']*self.cols for _ in range(self.lines)]
 
     def is_term_resized(self):
@@ -167,10 +198,11 @@ class Screen():
     def _render_screen(self, state): 
         y_max = int(state.max_entry*1.2)
         y_latest = state.entries[-1] if len(state.entries) else 0
+        n = len(state.entries)
         if state.x_min and state.x_max:
-            status = "x=[{}...,{}...] y=[0,{}] y_max={}".format(state.x_min, state.x_max, y_max, state.max_entry)
+            status = "x=[{}, {}] y=[0, {}] y_max={} n={}".format(datetime.fromtimestamp(state.x_min), datetime.fromtimestamp(state.x_max), y_max, state.max_entry, n)
         else:
-            status = "y=[0,{}] i={}s latest={}".format(y_max, interval, y_latest)
+            status = "y=[0, {}] i={}s latest={}".format(y_max, interval, y_latest)
         self.cscreen.addstr(0, 0, status)
         for line in range(0, self.lines):
             self._render_line(line, "".join(self.screen[line]))
@@ -180,8 +212,14 @@ class Screen():
         self.cscreen.addstr(line, 0, content)
 
     def _calculate_screen(self, state):
-        slice_start = len(state.entries) - self.cols
-        slice_end = len(state.entries) - 1
+        is_stream = not (state.x_min and state.x_max)
+
+        if is_stream:
+            slice_start = len(state.entries) - self.cols
+            slice_end = len(state.entries) - 0
+        else:
+            slice_start = 0
+            slice_end = len(state.entries) - 0
 
         if slice_start < 0:
             slice_start = 0
@@ -199,10 +237,13 @@ class Screen():
             normalized_entry = normalized_entry // 4
 
             for line in range(1, self.lines - normalized_entry):
-                self.screen[line][col] = ' '
-            self.screen[self.lines - normalized_entry - 1][col] = last_block
+                if col < len(self.screen[line]):
+                    self.screen[line][col] = ' '
+            if col < len(self.screen[line]):
+                self.screen[self.lines - normalized_entry - 1][col] = last_block
             for line in range(self.lines - normalized_entry, self.lines):
-                self.screen[line][col] = block
+                if col < len(self.screen[line]):
+                    self.screen[line][col] = block
 
     def _get_last_block(self, normalized_entry):
         half_blocks = {
