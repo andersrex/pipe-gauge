@@ -113,7 +113,7 @@ class Gauge():
             normalized_key = int((key - first_key)*((self.screen.cols-1)/diff))
             entries[normalized_key] = entries[normalized_key] + 1
 
-        return State(entries, first_key, last_key)
+        return State(entries, len(lines), first_key, last_key)
 
     def split_into_groups_parse(self, lines):
         groups  = {}
@@ -145,13 +145,15 @@ class Gauge():
 
 class State():
     """Class for keeping application state"""
-    def __init__(self, entries, first_key="", last_key=""):
+    def __init__(self, entries, n = 0, first_key="", last_key="", ):
         self.entries = entries
+        self.x_min = first_key
+        self.x_max = last_key
+        self.n = n
         self.y_min = 0
         self.y_max = 0
         self.y_latest = 0
-        self.x_min = first_key
-        self.x_max = last_key
+
         self.max_entry = max(entries or [1])
 
     def add_entry(self, entry):
@@ -196,9 +198,8 @@ class Screen():
     def _render_screen(self, state): 
         y_max = int(state.max_entry*1.2)
         y_latest = state.entries[-1] if len(state.entries) else 0
-        n = len(state.entries)
         if state.x_min and state.x_max:
-            status = "x=[{}, {}] y=[0, {}] y_max={} n={}".format(datetime.fromtimestamp(state.x_min), datetime.fromtimestamp(state.x_max), y_max, state.max_entry, n)
+            status = "x=[{}, {}] y=[0, {}] y_max={} n={}".format(datetime.fromtimestamp(state.x_min), datetime.fromtimestamp(state.x_max), y_max, state.max_entry, state.n)
         else:
             status = "y=[0, {}] i={}s latest={}".format(y_max, interval, y_latest)
         self.cscreen.addstr(0, 0, status)
